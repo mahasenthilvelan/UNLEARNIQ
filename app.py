@@ -242,11 +242,15 @@ def run_pipeline(df_raw, selected_users, pb, st_txt):
     # STEP 2: UserId  (1 000 users — matches Colab)
     df['UserId'] = ['user_' + str(i % 1000) for i in range(len(df))]
 
-    # STEP 4: Balance
+    # STEP 4: Balance  (pandas-version-safe)
     sample_size = df['label'].value_counts().min()
-    df = df.groupby('label').apply(
-        lambda x: x.sample(sample_size, replace=True, random_state=42)
-    ).reset_index(drop=True)
+    parts = [
+        grp.sample(sample_size, replace=True, random_state=42)
+        for _, grp in df.groupby('label')
+    ]
+    df = pd.concat(parts).reset_index(drop=True)
+    # ensure columns are exactly what we need
+    df = df[['Text', 'label', 'clean_text', 'UserId']].copy()
 
     pb.progress(10); time.sleep(0.15)
 
