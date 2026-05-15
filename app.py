@@ -560,8 +560,14 @@ elif st.session_state.phase == "user_select":
     search = st.text_input("🔍 Filter users", placeholder="Type e.g.  user_10  or  user_250 …")
     filtered_users = [u for u in all_users if search.strip().lower() in u] if search.strip() else all_users
 
-    prev        = st.session_state.selected_users
-    default_sel = [u for u in prev if u in filtered_users] if prev else [all_users[0]]
+    # Safe default: only keep previously selected users that exist in current filtered list
+    prev        = st.session_state.get("selected_users", [])
+    valid_prev  = [u for u in prev if u in filtered_users]
+    # If nothing valid and no active search, seed with first user
+    if not valid_prev and not search.strip():
+        default_sel = [filtered_users[0]] if filtered_users else []
+    else:
+        default_sel = valid_prev
 
     selected = st.multiselect(
         "Select users to unlearn:",
